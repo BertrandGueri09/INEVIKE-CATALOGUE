@@ -445,7 +445,7 @@ def export_catalogue_pdf(db):
     story.append(Spacer(1, 2 * mm))
     story.append(
         Paragraph(
-            f"<font size='7' color='#888'>INEVOKE SARL · Abidjan, Côte d'Ivoire · (225) 0544125825 · "
+            f"<font size='7' color='#888'>INEVOKE SARL · Abidjan, Côte d'Ivoire · (+225) 0544125825 · "
             f"hello@inevoke.ci · www.inevoke.ci · {date.today().strftime('%d/%m/%Y')}</font>",
             ps("ft", alignment=TA_CENTER),
         )
@@ -638,7 +638,7 @@ def generate_devis_pdf(info, lignes, fournisseur, remise_pct, tva_pct):
     story.append(
         Paragraph(
             "<font size='7' color='#888'>INEVOKE SARL — RCCM CI-ABJ-2024 — "
-            "Abidjan, Côte d'Ivoire — contact@inevoke.ci — www.inevoke.ci</font>",
+            "Abidjan, Côte d'Ivoire — (+225) 0544125825 — hello@inevoke.ci — www.inevoke.ci</font>",
             ps("ft", alignment=TA_CENTER),
         )
     )
