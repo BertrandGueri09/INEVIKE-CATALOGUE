@@ -1,0 +1,28 @@
+{
+  "fournisseurs": [
+    "SOGELUX",
+    "DEYE",
+    "HONLE",
+    "ECS",
+    "AUTRES",
+    "SGCI",
+    "VISION ELECTRIQUE",
+    "VITRON ENERGY",
+    "ECO SOLAR",
+    "BERNABE",
+    "SODIS MAD"
+  ],
+  "categories": [
+    "Panneaux",
+    "Onduleur",
+    "Batteries",
+    "Structure",
+    "Protections DC",
+    "Protections AC",
+    "Protections Batterie",
+    "Câbles",
+    "Accessoires",
+    "Main d'œuvre",
+    "DIJONCTEUR"
+  ]
+}
