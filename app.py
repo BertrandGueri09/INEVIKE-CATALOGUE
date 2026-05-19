@@ -1196,8 +1196,12 @@ elif page == "✏️ Modifier le catalogue":
                 final.append(normalize_record(r, fournisseurs=FOURNISSEURS))
 
         save_db(final)
-        st.success(f"✅ {len(final)} équipement(s) enregistrés avec succès.")
+        # Recharge immédiatement les nouvelles données
+        db = load_db()
 
+# Rafraîchit l'application
+        st.success(f"✅ {len(final)} équipement(s) enregistrés avec succès.")
+        st.rerun()
     s2, s3 = st.columns([1, 1])
     with s2:
         eq_del = st.selectbox(
