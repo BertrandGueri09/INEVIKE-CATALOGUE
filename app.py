@@ -2,13 +2,13 @@ import streamlit as st
 import pandas as pd
 import json
 import os
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 import uuid
 from copy import deepcopy
 from datetime import date, timedelta
 from io import BytesIO
 
-from database import init_db, load_db, save_db
+from database_postgres import init_db, load_db, save_db
 
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
@@ -218,23 +218,6 @@ def show_flash_messages():
 # ──────────────────────────────────────────────────────────────────────────────
 # Base de données
 # ──────────────────────────────────────────────────────────────────────────────
-def old_load_db_json():
-    if not os.path.exists(DB_FILE):
-        return []
-    try:
-        with open(DB_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return ensure_all_supplier_keys(data, fournisseurs=FOURNISSEURS)
-    except Exception:
-        return []
-
-
-def old_save_db_json(data):
-    clean = ensure_all_supplier_keys(data, fournisseurs=FOURNISSEURS)
-    with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(clean, f, ensure_ascii=False, indent=2)
-
-
 def db_to_df(db):
     base_cols = ["id", "categorie", "designation", "unite", "note"] + FOURNISSEURS
     if not db:
