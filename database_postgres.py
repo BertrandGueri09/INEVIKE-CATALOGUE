@@ -1,56 +1,42 @@
 import json
 import streamlit as st
-from sqlalchemy import create_engine, text
+from supabase import create_client, Client
 
 # ─────────────────────────────────────────────
-# Connexion à la base de données
+# Connexion Supabase
 # ─────────────────────────────────────────────
-DATABASE_URL = st.secrets["DATABASE_URL"]
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 
-# Compatibilité SQLAlchemy 1.4+ (postgres:// → postgresql://)
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"sslmode": "require"},
-)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ─────────────────────────────────────────────
-# Initialisation de la table
+# Initialisation (la table doit exister déjà)
 # ─────────────────────────────────────────────
 def init_db():
-    with engine.begin() as conn:
-        conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS catalogue (
-                id   TEXT PRIMARY KEY,
-                data JSONB NOT NULL
-            )
-        """))
+    pass  # Table créée manuellement via SQL Editor
 
 # ─────────────────────────────────────────────
 # Charger les données
 # ─────────────────────────────────────────────
 def load_db():
-    with engine.connect() as conn:
-        result = conn.execute(text("SELECT data FROM catalogue"))
-        rows = result.fetchall()
-    return [row[0] for row in rows]
+    try:
+        response = supabase.table("catalogue").select("data").execute()
+        return [row["data"] for row in response.data]
+    except Exception as e:
+        st.error(f"Erreur lors du chargement : {e}")
+        return []
 
 # ─────────────────────────────────────────────
 # Sauvegarder les données
 # ─────────────────────────────────────────────
 def save_db(data):
-    with engine.begin() as conn:
-        conn.execute(text("DELETE FROM catalogue"))
-        for item in data:
-            conn.execute(
-                text("""
-                    INSERT INTO catalogue (id, data)
-                    VALUES (:id, :data)
-                """),
-                {
-                    "id":   item["id"],
-                    "data": json.dumps(item, ensure_ascii=False),
-                }
-            )
+    try:
+        # Supprime tout
+        supabase.table("catalogue").delete().neq("id", "").execute()
+        # Réinsère tout
+        if data:
+            rows = [{"id": item["id"], "data": item} for item in data]
+            supabase.table("catalogue").insert(rows).execute()
+    except Exception as e:
+        st.error(f"Erreur lors de la sauvegarde : {e}")
