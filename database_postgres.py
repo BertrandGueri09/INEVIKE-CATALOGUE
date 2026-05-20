@@ -2,6 +2,7 @@
 import os
 import json
 import pandas as pd
+import streamlit as st 
 from sqlalchemy import create_engine, text
 
 DATABASE_URL = st.secrets.get("DATABASE_URL")
