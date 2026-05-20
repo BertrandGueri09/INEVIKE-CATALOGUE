@@ -1,77 +1,57 @@
-import sqlite3
 import pandas as pd
-from pathlib import Path
+from sqlalchemy import create_engine, text
 
-DB_NAME = "catalogue.db"
+# ⚠️ Remplace par ton vrai mot de passe Supabase
+DATABASE_URL = st.secrets["DATABASE_URL"]
+
+engine = create_engine(DATABASE_URL)
 
 
-def get_connection():
-    return sqlite3.connect(DB_NAME, check_same_thread=False)
-
-
+# ─────────────────────────────────────────────
+# Initialisation de la table
+# ─────────────────────────────────────────────
 def init_db():
-    conn = get_connection()
-
-    conn.execute("""
-    CREATE TABLE IF NOT EXISTS equipements (
-        id TEXT PRIMARY KEY,
-        categorie TEXT,
-        designation TEXT,
-        unite TEXT,
-        note TEXT,
-        SOGELUX REAL,
-        DEYE REAL,
-        HONLE REAL,
-        ECS REAL,
-        AUTRES REAL
-    )
-    """)
-
-    conn.commit()
-    conn.close()
-
-
-def load_db():
-    conn = get_connection()
-
-    try:
-        df = pd.read_sql("SELECT * FROM equipements", conn)
-
-        if df.empty:
-            json_file = Path("equipements_db.json")
-
-            if json_file.exists():
-                import json
-
-                with open(json_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-
-                save_db(data)
-                return data
-
-        return df.to_dict("records")
-
-    except Exception:
-        return []
-
-    finally:
-        conn.close()
-
-
-def save_db(data):
-    conn = get_connection()
-
-    try:
-        df = pd.DataFrame(data)
-
-        df.to_sql(
-            "equipements",
-            conn,
-            if_exists="replace",
-            index=False
-        )
-
+    with engine.connect() as conn:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS catalogue (
+                id TEXT PRIMARY KEY,
+                data JSONB
+            )
+        """))
         conn.commit()
 
-    finally:
-        conn.close()
+
+# ─────────────────────────────────────────────
+# Charger les données
+# ─────────────────────────────────────────────
+def load_db():
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT data FROM catalogue"))
+        rows = result.fetchall()
+
+    return [row[0] for row in rows]
+
+
+# ─────────────────────────────────────────────
+# Sauvegarder les données
+# ─────────────────────────────────────────────
+def save_db(data):
+    with engine.connect() as conn:
+
+        # Vide ancienne base
+        conn.execute(text("DELETE FROM catalogue"))
+
+        # Réinsère tout
+        for item in data:
+            conn.execute(
+                text("""
+                    INSERT INTO catalogue (id, data)
+                    VALUES (:id, :data)
+                """),
+                {
+                    "id": item["id"],
+                    "data": item
+                }
+            )
+
+        conn.commit()
