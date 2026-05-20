@@ -1,43 +1,56 @@
-
-import os
 import json
-import pandas as pd
-import streamlit as st 
+import streamlit as st
 from sqlalchemy import create_engine, text
 
-DATABASE_URL = st.secrets.get("DATABASE_URL")
+# ─────────────────────────────────────────────
+# Connexion à la base de données
+# ─────────────────────────────────────────────
+DATABASE_URL = st.secrets["DATABASE_URL"]
 
-engine = create_engine(DATABASE_URL)
+# Compatibilité SQLAlchemy 1.4+ (postgres:// → postgresql://)
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"sslmode": "require"},
+)
 
+# ─────────────────────────────────────────────
+# Initialisation de la table
+# ─────────────────────────────────────────────
 def init_db():
     with engine.begin() as conn:
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS catalogue (
-                id SERIAL PRIMARY KEY,
-                data JSONB
+                id   TEXT PRIMARY KEY,
+                data JSONB NOT NULL
             )
         """))
 
-
+# ─────────────────────────────────────────────
+# Charger les données
+# ─────────────────────────────────────────────
 def load_db():
-    with engine.begin() as conn:
+    with engine.connect() as conn:
         result = conn.execute(text("SELECT data FROM catalogue"))
-
         rows = result.fetchall()
+    return [row[0] for row in rows]
 
-        if not rows:
-            return []
-
-        return [row[0] for row in rows]
-
-
+# ─────────────────────────────────────────────
+# Sauvegarder les données
+# ─────────────────────────────────────────────
 def save_db(data):
     with engine.begin() as conn:
         conn.execute(text("DELETE FROM catalogue"))
-
-        for row in data:
+        for item in data:
             conn.execute(
-                text("INSERT INTO catalogue (data) VALUES (:data)"),
-                {"data": json.dumps(row)},
+                text("""
+                    INSERT INTO catalogue (id, data)
+                    VALUES (:id, :data)
+                """),
+                {
+                    "id":   item["id"],
+                    "data": json.dumps(item, ensure_ascii=False),
+                }
             )
