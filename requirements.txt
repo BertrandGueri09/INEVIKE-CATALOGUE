@@ -6,3 +6,4 @@ reportlab>=4.0.0
 Pillow>=10.0.0
 
 pysqlite3-binary
+psycopg2-binary
