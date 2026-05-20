@@ -21,12 +21,16 @@ def init_db():
 # ─────────────────────────────────────────────
 def load_db():
     try:
-        response = supabase.table("catalogue").select("data").execute()
-        return [row["data"] for row in response.data]
-    except Exception as e:
-        st.error(f"Erreur lors du chargement : {e}")
+        response = supabase.table("catalogue").select("*").execute()
+
+        if response.data:
+            return [row["data"] for row in response.data]
+
         return []
 
+    except Exception as e:
+        st.error(f"Erreur lors du chargement : {str(e)}")
+        return []
 # ─────────────────────────────────────────────
 # Sauvegarder les données
 # ─────────────────────────────────────────────
