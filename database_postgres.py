@@ -4,7 +4,7 @@ import json
 import pandas as pd
 from sqlalchemy import create_engine, text
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = st.secrets.get("DATABASE_URL")
 
 engine = create_engine(DATABASE_URL)
 
