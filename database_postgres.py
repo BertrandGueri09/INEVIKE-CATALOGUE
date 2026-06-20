@@ -44,3 +44,32 @@ def save_db(data):
             supabase.table("catalogue").insert(rows).execute()
     except Exception as e:
         st.error(f"Erreur lors de la sauvegarde : {e}")
+
+def load_settings_db():
+    try:
+        response = (
+            supabase
+            .table("app_settings")
+            .select("*")
+            .eq("key", "catalogue_settings")
+            .execute()
+        )
+
+        if response.data:
+            return response.data[0]["value"]
+
+        return None
+
+    except Exception:
+        return None
+
+
+def save_settings_db(settings):
+    try:
+        supabase.table("app_settings").upsert({
+            "key": "catalogue_settings",
+            "value": settings
+        }).execute()
+
+    except Exception as e:
+        st.error(f"Erreur sauvegarde paramètres : {e}")
