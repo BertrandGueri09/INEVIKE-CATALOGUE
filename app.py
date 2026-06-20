@@ -1,13 +1,17 @@
 import streamlit as st
 import pandas as pd
-import json
-import os
 import uuid
 from copy import deepcopy
 from datetime import date, timedelta
 from io import BytesIO
 
-from database_postgres import init_db, load_db, save_db
+from database_postgres import (
+    init_db,
+    load_db,
+    save_db,
+    load_settings_db,
+    save_settings_db
+)
 
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
@@ -31,7 +35,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-SETTINGS_FILE = "catalogue_settings.json"
 
 DEFAULT_FOURNISSEURS = ["SOGELUX", "DEYE", "HONLE", "ECS", "AUTRES"]
 DEFAULT_CATEGORIES = [
@@ -78,32 +81,26 @@ init_db()
 # Paramètres
 # ──────────────────────────────────────────────────────────────────────────────
 def load_settings():
-    if not os.path.exists(SETTINGS_FILE):
+
+    data = load_settings_db()
+
+    if not data:
         return {
             "fournisseurs": DEFAULT_FOURNISSEURS.copy(),
             "categories": DEFAULT_CATEGORIES.copy(),
         }
-    try:
-        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
 
-        if "fournisseurs" not in data or not isinstance(data["fournisseurs"], list):
-            data["fournisseurs"] = DEFAULT_FOURNISSEURS.copy()
+    if "fournisseurs" not in data:
+        data["fournisseurs"] = DEFAULT_FOURNISSEURS.copy()
 
-        if "categories" not in data or not isinstance(data["categories"], list):
-            data["categories"] = DEFAULT_CATEGORIES.copy()
+    if "categories" not in data:
+        data["categories"] = DEFAULT_CATEGORIES.copy()
 
-        return data
-    except Exception:
-        return {
-            "fournisseurs": DEFAULT_FOURNISSEURS.copy(),
-            "categories": DEFAULT_CATEGORIES.copy(),
-        }
+    return data
 
 
 def save_settings(settings):
-    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-        json.dump(settings, f, ensure_ascii=False, indent=2)
+    save_settings_db(settings)
 
 
 settings = load_settings()
@@ -1050,8 +1047,12 @@ elif page == "✏️ Modifier le catalogue":
             elif nom in FOURNISSEURS:
                 st.warning(f"⚠️ Le fournisseur « {nom} » existe déjà.")
             else:
-                FOURNISSEURS.append(nom)
-                persist_fournisseurs(FOURNISSEURS)
+                new_fournisseurs = FOURNISSEURS.copy()
+                new_fournisseurs.append(nom)
+
+                persist_fournisseurs(new_fournisseurs)
+                
+                FOURNISSEURS = new_fournisseurs
 
                 for r in db:
                     if nom not in r:
@@ -1075,9 +1076,14 @@ elif page == "✏️ Modifier le catalogue":
             use_container_width=True,
             key="btn_delete_supplier",
         ):
-            FOURNISSEURS = [f for f in FOURNISSEURS if f != supplier_to_delete]
-            persist_fournisseurs(FOURNISSEURS)
-
+            new_fournisseurs = [
+                f for f in FOURNISSEURS
+                if f != supplier_to_delete
+            ]
+            
+            persist_fournisseurs(new_fournisseurs)
+            
+            FOURNISSEURS = new_fournisseurs
             for r in db:
                 if supplier_to_delete in r:
                     del r[supplier_to_delete]
