@@ -8,20 +8,28 @@ from supabase import create_client, Client
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase: Client = create_client(
+    SUPABASE_URL,
+    SUPABASE_KEY
+)
 
 # ─────────────────────────────────────────────
-# Initialisation (la table doit exister déjà)
+# Initialisation
 # ─────────────────────────────────────────────
 def init_db():
-    pass  # Table créée manuellement via SQL Editor
+    pass
 
 # ─────────────────────────────────────────────
-# Charger les données
+# Catalogue
 # ─────────────────────────────────────────────
 def load_db():
     try:
-        response = supabase.table("catalogue").select("*").execute()
+        response = (
+            supabase
+            .table("catalogue")
+            .select("*")
+            .execute()
+        )
 
         if response.data:
             return [row["data"] for row in response.data]
@@ -29,24 +37,41 @@ def load_db():
         return []
 
     except Exception as e:
-        st.error(f"Erreur lors du chargement : {str(e)}")
+        st.error(f"Erreur lors du chargement : {e}")
         return []
-# ─────────────────────────────────────────────
-# Sauvegarder les données
-# ─────────────────────────────────────────────
+
+
 def save_db(data):
     try:
-        # Supprime tout
-        supabase.table("catalogue").delete().neq("id", "").execute()
-        # Réinsère tout
-        if data:
-            rows = [{"id": item["id"], "data": item} for item in data]
-            supabase.table("catalogue").insert(rows).execute()
+
+        if not data:
+            return
+
+        rows = [
+            {
+                "id": item["id"],
+                "data": item
+            }
+            for item in data
+        ]
+
+        (
+            supabase
+            .table("catalogue")
+            .upsert(rows)
+            .execute()
+        )
+
     except Exception as e:
         st.error(f"Erreur lors de la sauvegarde : {e}")
 
+
+# ─────────────────────────────────────────────
+# Paramètres catalogue
+# ─────────────────────────────────────────────
 def load_settings_db():
     try:
+
         response = (
             supabase
             .table("app_settings")
@@ -60,16 +85,25 @@ def load_settings_db():
 
         return None
 
-    except Exception:
+    except Exception as e:
+        st.error(f"Erreur chargement paramètres : {e}")
         return None
 
 
 def save_settings_db(settings):
     try:
-        supabase.table("app_settings").upsert({
-            "key": "catalogue_settings",
-            "value": settings
-        }).execute()
+
+        (
+            supabase
+            .table("app_settings")
+            .upsert(
+                {
+                    "key": "catalogue_settings",
+                    "value": settings
+                }
+            )
+            .execute()
+        )
 
     except Exception as e:
         st.error(f"Erreur sauvegarde paramètres : {e}")
